@@ -8,6 +8,15 @@ source("_functions.R")
 
 benchmark_begin()
 
+# setup dd oflag/iflag differently on a Mac to avoid errors
+if (Sys.info()['sysname'] == 'Darwin') {
+  oflag_option <- ""
+  iflag_option <- ""
+} else {
+  oflag_option <- "oflag=nocache"
+  iflag_option <- "iflag=nocache"
+}
+
 dir.create(target("lib"), recursive = TRUE, showWarnings = FALSE)
 
 # Install common R packages =====================================================================================
@@ -17,6 +26,7 @@ benchmark("Install BH", time_install("BH", lib = target("lib")))
 
 utils::remove.packages(c("MASS", "lattice", "BH"), lib = target("lib"))
 unlink(target("lib"), recursive = TRUE)
+
 # ===============================================================================================================
 
 # Write, then read, 1GB CSV =====================================================================================
@@ -42,7 +52,7 @@ for (i in 1:4) {
   benchmark("DD write, 1GB", system.time({
     mclapply(1:num_writers, function(id) {
       file <- target(sprintf("parallel_%d.dat", id))
-      command <- sprintf("dd if=/dev/zero of=%s bs=1048576 count=1024 conv=sync oflag=nocache", file)
+      command <- sprintf("dd if=/dev/zero of=%s bs=1048576 count=1024 conv=sync %s", file, oflag_option)
       system(command)
     }, mc.preschedule = FALSE, mc.cores = num_writers)
   }), parallelism = num_writers)
@@ -53,7 +63,7 @@ for (i in 1:4) {
   benchmark("DD read, 1GB", system.time({
     mclapply(1:num_readers, function(id) {
       file <- target(sprintf("parallel_%d.dat", id))
-      command <- sprintf("dd if=%s of=/dev/null bs=1048576 count=1024 iflag=nocache", file)
+      command <- sprintf("dd if=%s of=/dev/null bs=1048576 count=1024 %s", file, iflag_option)
       system(command)
     }, mc.preschedule = FALSE, mc.cores = num_readers)
   }), parallelism = num_readers)
@@ -88,7 +98,7 @@ for (i in 1:4) {
     mclapply(1:num_writers, function(id) {
       for (j in 1:1000) {
         file <- target(sprintf("small-parallel_%d_%d.dat", id, j))
-        command <- sprintf("dd if=/dev/zero of=%s bs=1024 count=10 conv=sync oflag=nocache", file)
+        command <- sprintf("dd if=/dev/zero of=%s bs=1024 count=10 conv=sync %s", file, oflag_option)
         system(command, ignore.stdout = TRUE, ignore.stderr = TRUE)
       }
     }, mc.preschedule = FALSE, mc.cores = num_writers)
@@ -101,7 +111,7 @@ for (i in 1:4) {
     mclapply(1:num_readers, function(id) {
       for (j in 1:1000) {
         file <- target(sprintf("small-parallel_%d_%d.dat", id, j))
-        command <- sprintf("dd if=%s of=/dev/null bs=1024 count=10 iflag=nocache", file)
+        command <- sprintf("dd if=%s of=/dev/null bs=1024 count=10 %s", file, iflag_option)
         system(command, ignore.stdout = TRUE, ignore.stderr = TRUE)
       }
     }, mc.preschedule = FALSE, mc.cores = num_readers)

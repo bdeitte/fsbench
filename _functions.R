@@ -49,11 +49,16 @@ aggregate_benchmark <- function(name, iterations, task) {
 }
 
 benchmark_end <- function() {
+  total_elapsed <<- 0
   df <- do.call(rbind, unname(lapply(times, function(list) {
     proc_time <- list[[1]]
     parallelism <- as.integer(list[[2]])
     pt <- summary(proc_time)
-    data.frame(user = pt[[1]], system = pt[[2]], elapsed = pt[[3]], parallelism = parallelism)
+    user <- prettyNum(pt[[1]])
+    system <- prettyNum(pt[[2]])
+    elapsed <- prettyNum(pt[[3]])
+    total_elapsed <<- sum(total_elapsed, as.numeric(elapsed))
+    data.frame(parallelism = parallelism, user = user, system = system, elapsed = elapsed)
   })))
 
   # strip off the added parallelism in the name when creating the final data frame
@@ -66,7 +71,8 @@ benchmark_end <- function() {
     message("No OUTPUT_FILE env var; writing to ", results_filename)
   }
   write.csv(df, results_filename, row.names = FALSE)
-  print(df)
+  print(df, n=100)
+  sprintf("Total elapsed: %.2f seconds", total_elapsed)
 }
 
 time_install <- function(pkgname, type = "source", ...) {

@@ -2,17 +2,15 @@
 
 A set of R-centric benchmarks that evaluate filesystem performance for a number of common tasks. Currently for Linux and macOS only.
 
-**Work in progress**
-
 ## Preparation
 
 ```
 make setup
 ```
 
-This will install required R packages, compile a small binary executable, and download some large data files to run the benchmarks against.
+This will install required R packages, compile a small binary executable, and download some large data files to run the benchmarks against. If this command doesn't work for you, see the Potential Errors section below.
 
-Running `make setup` will execute a command under `sudo`. This is necessary to create the `tools/purge` executable, which is invoked before each benchmark. The `purge` executable dumps the operating system's disk cache, which is a privileged operation, so the setuid flag to be set.
+You may be asked for your password during setup as running `make setup` will execute a command under `sudo`. This is necessary to create the `tools/purge` executable, which is invoked before each benchmark. The `purge` executable dumps the operating system's disk cache, which is a privileged operation, so the setuid flag to be set.
 
 ## Running
 
@@ -20,7 +18,9 @@ Running `make setup` will execute a command under `sudo`. This is necessary to c
 make
 ```
 
-This will run for several minutes and then dump some timing information to the screen.
+This will run for several minutes and then dump some timing information to a CSV and to the screen . If this command doesn't work for you, see the Potential Errors section below.
+
+The timing information shown can be used in a variety of ways-  (TODO: add more on timing information, show example of it and what is most important in it)
 
 ### Run Configuration
 
@@ -38,7 +38,7 @@ To run the comparison tool:
 
 ```
 Rscript compare.R <filesystem name>=<results file glob> ...
-```
+
 
 For example, to compare several runs against an SSD to several runs against an EFS volume:
 
@@ -50,3 +50,17 @@ This will cause all `*ssd.csv` files containing `ssd` results to be loaded and a
 
 * `serial-plot-results.png` shows all of the serial tests that have no parallelization, one plot for each test benchmark
 * `parallel-plot-results.png` shows all of the parallel tests, one plot for each test benchmark
+
+## Running in Docker
+
+for testing, don't perf test this way unless it's the way you really do want to test.  Also can show how things can work in your existing containers where you do want to test
+
+```
+docker build . -t fsbench
+docker run -it --privileged --name fsbench fsbench bash -c cd /usr/local/fsbench && make
+docker rm fsbench
+```
+
+## Potential errors
+
+(TODO: explain parallelism is NA, Error: Read-only file system, needing prviledged setting, using in workbench)
